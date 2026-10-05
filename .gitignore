@@ -1,0 +1,10 @@
+# Logs
+*.log
+firebase-debug.log
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Node dependencies (if any)
+node_modules/

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Programação de Produção</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- Upload Screen -->
+<div id="upload-screen" class="upload-screen">
+    <div class="upload-container">
+        <div class="upload-logo">
+            <img src="logo.jpg" alt="Espaço Smart" class="brand-logo-upload">
+        </div>
+        <h1>Programação de Produção</h1>
+        <p class="upload-subtitle">Importe sua planilha para começar o acompanhamento</p>
+        
+        <div class="upload-dropzone" id="dropzone">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Arraste e solte seu arquivo aqui</p>
+            <span>ou</span>
+            <label for="file-input" class="upload-btn">
+                <i class="fas fa-file-excel"></i> Selecionar Arquivo
+            </label>
+            <input type="file" id="file-input" accept=".csv,.xlsx,.xls" hidden>
+            <p class="upload-formats">Formatos aceitos: CSV, XLSX, XLS</p>
+        </div>
+
+        <div class="upload-expected-columns">
+            <h3><i class="fas fa-info-circle"></i> Colunas esperadas na planilha:</h3>
+            <div class="columns-grid">
+                <div class="column-tag"><i class="fas fa-barcode"></i> Código do Produto</div>
+                <div class="column-tag"><i class="fas fa-boxes-stacked"></i> Quantidade Programada</div>
+                <div class="column-tag"><i class="fas fa-building"></i> Código do Estabelecimento</div>
+                <div class="column-tag"><i class="fas fa-comment"></i> Observações</div>
+                <div class="column-tag column-tag-highlight"><i class="fas fa-calendar-week"></i> Semana do Plano (opcional)</div>
+            </div>
+        </div>
+
+        <div id="upload-error" class="upload-error" style="display:none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="upload-error-text"></span>
+        </div>
+
+        <button id="btn-load-saved" class="btn-load-saved" style="display:none;">
+            <i class="fas fa-database"></i> Carregar dados salvos anteriormente
+        </button>
+    </div>
+</div>
+
+<!-- Dashboard Screen -->
+<div id="dashboard-screen" class="dashboard-screen" style="display:none;">
+    
+    <!-- Top Header Bar -->
+    <header class="header">
+        <div class="header-left">
+            <img src="logo.jpg" alt="Espaço Smart" class="brand-logo-header">
+            <div class="header-title-box">
+                <h1 id="dashboard-title">Programação de Produção</h1>
+                <span class="header-subtitle" id="header-subtitle"></span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="header-stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-total">0</span>
+                    <span class="stat-label">Itens</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-concluido">0</span>
+                    <span class="stat-label">Concluídos</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-parcial">0</span>
+                    <span class="stat-label">Parciais</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-pendente">0</span>
+                    <span class="stat-label">Pendentes</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-action" id="btn-export" title="Exportar dados">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="btn-action" id="btn-save" title="Salvar dados">
+                    <i class="fas fa-save"></i>
+                </button>
+                <button class="btn-action btn-new-import" id="btn-new-import" title="Nova importação">
+                    <i class="fas fa-file-import"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="Buscar por código, descrição ou observação...">
+            </div>
+            <div class="filter-group">
+                <label>Status:</label>
+                <select id="filter-status">
+                    <option value="todos">Todos</option>
+                    <option value="concluido">Concluído</option>
+                    <option value="parcial">Parcial</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="nao_produzido">Não Produzido</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Estabelecimento:</label>
+                <select id="filter-estab">
+                    <option value="todos">Todos</option>
+                </select>
+            </div>
+        </div>
+        <div class="toolbar-right">
+            <div class="week-selector">
+                <label for="week-select"><i class="fas fa-calendar-week"></i> Semana:</label>
+                <div class="week-nav-group">
+                    <button class="btn-week-nav" id="btn-prev-week" title="Semana anterior">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <select id="week-select" class="week-select" title="Alternar entre semanas salvas"></select>
+                    <button class="btn-week-nav" id="btn-next-week" title="Próxima semana">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="week-extra-controls">
+                    <input type="week" id="week-input" title="Escolher semana no calendário" style="display:none;">
+                    <button class="btn-week-action" id="btn-calendar-week" title="Escolher semana no calendário">
+                        <i class="fas fa-calendar-alt"></i>
+                    </button>
+                    <button class="btn-week-action btn-add-week" id="btn-add-week" title="Criar nova semana">
+                        <i class="fas fa-plus"></i> Nova
+                    </button>
+                    <button class="btn-week-action btn-del-week" id="btn-del-week" title="Excluir semana atual">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-section">
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+        </div>
+        <span class="progress-text" id="progress-text">0% concluído</span>
+    </div>
+
+    <!-- Main Table -->
+    <div class="table-wrapper">
+        <table id="production-table">
+            <thead>
+                <tr>
+                    <th class="col-item" rowspan="2">Código<br>Produto</th>
+                    <th class="col-desc" rowspan="2">Descrição</th>
+                    <th class="col-estab" rowspan="2">Estab</th>
+                    <th class="col-qty" rowspan="2">Qtd.<br>Programada</th>
+                    <th class="col-obs" rowspan="2">Observações</th>
+                    <th class="col-op" rowspan="2">Ordem de<br>Produção</th>
+                    <th class="col-week" colspan="8">Planejamento Semanal Fábrica</th>
+                    <th class="col-status" rowspan="2">Status</th>
+                </tr>
+                <tr>
+                    <th class="col-day">Tipo</th>
+                    <th class="col-day">Seg</th>
+                    <th class="col-day">Ter</th>
+                    <th class="col-day">Qua</th>
+                    <th class="col-day">Qui</th>
+                    <th class="col-day">Sex</th>
+                    <th class="col-day">Sáb</th>
+                    <th class="col-day col-total">Total</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <!-- Rows populated by JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Footer totals -->
+    <div class="footer-bar">
+        <div class="footer-info">
+            <span><i class="fas fa-cubes"></i> Total Programado: <strong id="footer-total-programado">0</strong></span>
+            <span><i class="fas fa-check-circle"></i> Total Planejado: <strong id="footer-total-planejado">0</strong></span>
+            <span><i class="fas fa-chart-bar"></i> Total Realizado: <strong id="footer-total-realizado">0</strong></span>
+        </div>
+        <div class="footer-actions">
+            <span class="save-indicator" id="save-indicator" style="display:none;">
+                <i class="fas fa-check-circle"></i> Salvo
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Toast notifications -->
+<div id="toast-container" class="toast-container"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
