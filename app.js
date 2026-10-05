@@ -1009,7 +1009,6 @@ function switchWeek(newWeek, saveCurrent = true) {
     populateEstabFilter();
     updateHeaderSubtitle();
     renderTable();
-    showToast(`Alternado para ${newWeek}`, 'info');
 }
 
 function navigateWeek(direction) {
