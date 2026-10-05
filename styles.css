@@ -104,8 +104,160 @@ body {
 
 .upload-subtitle {
     color: var(--gray-600);
-    margin-bottom: 32px;
+    margin-bottom: 24px;
     font-size: 15px;
+}
+
+/* Upload Week Config Card */
+.upload-week-card {
+    background: #ffffff;
+    border: 1px solid var(--gray-300);
+    border-left: 5px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    margin-bottom: 22px;
+    text-align: left;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.upload-week-card:hover {
+    border-color: var(--gray-400);
+    border-left-color: var(--accent);
+    box-shadow: var(--shadow-md);
+}
+
+.upload-week-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.upload-week-label {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--gray-800);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.upload-week-label i {
+    color: var(--accent);
+    font-size: 15px;
+}
+
+.upload-week-badge {
+    background: var(--orange-bg);
+    color: var(--accent-dark);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(242, 101, 34, 0.25);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.upload-week-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.upload-week-input-wrapper {
+    flex: 1;
+}
+
+.upload-week-input {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--font);
+    color: var(--gray-900);
+    background: #fafafa;
+    border: 1.5px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    outline: none;
+    transition: var(--transition);
+}
+
+.upload-week-input:focus {
+    background: var(--white);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.15);
+}
+
+.btn-quick-week {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border: 1.5px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    transition: var(--transition);
+}
+
+.btn-quick-week:hover {
+    background: var(--accent);
+    color: var(--white);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.upload-week-note {
+    font-size: 12px;
+    color: var(--gray-600);
+    line-height: 1.45;
+    margin: 0;
+}
+
+.upload-week-note strong {
+    color: var(--gray-800);
+}
+
+.upload-week-note i {
+    color: var(--accent);
+    margin-right: 5px;
+}
+
+.upload-actions-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.btn-return-dashboard {
+    background: none;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: var(--transition);
+    font-family: var(--font);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-return-dashboard:hover {
+    background: var(--accent);
+    color: var(--white);
 }
 
 .upload-dropzone {

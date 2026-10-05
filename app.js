@@ -259,10 +259,11 @@ function findColumn(headers, mapKey) {
 // ==========================================
 // File Parsing
 // ==========================================
-function parseFile(file) {
+function parseFile(file, fallbackWeek) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         const ext = file.name.split('.').pop().toLowerCase();
+        const defaultTargetWeek = fallbackWeek || AppState.currentWeek || getCurrentWeekLabel();
 
         reader.onload = (e) => {
             try {
@@ -311,9 +312,11 @@ function parseFile(file) {
                         descricao = csvDesc;
                     }
 
-                    // Week resolution per row
+                    // Week resolution per row:
+                    // If row has explicit non-empty week in CSV, respect it.
+                    // Otherwise use defaultTargetWeek chosen by user on upload screen.
                     let rawSemana = colSemana !== -1 ? String(row[colSemana] || '').trim() : '';
-                    let semanaItem = normalizeWeekName(rawSemana, AppState.currentWeek || getCurrentWeekLabel());
+                    let semanaItem = rawSemana ? normalizeWeekName(rawSemana, defaultTargetWeek) : defaultTargetWeek;
 
                     items.push({
                         id: generateId(),
@@ -748,6 +751,22 @@ function setupEventListeners() {
     // Initial check for saved data
     if (hasSavedData()) {
         btnSaved.style.display = 'inline-block';
+        const saved = loadData();
+        if (saved && saved.weeks) {
+            AppState.weeks = saved.weeks;
+            if (saved.currentWeek) AppState.currentWeek = saved.currentWeek;
+        }
+    }
+
+    // Setup upload week controls & return button
+    setupUploadWeekControls();
+    const btnReturnDash = document.getElementById('btn-return-dashboard');
+    if (btnReturnDash) {
+        btnReturnDash.addEventListener('click', () => {
+            if (AppState.data && AppState.data.length > 0) {
+                showDashboard();
+            }
+        });
     }
 
     // Auto-save every 60s
@@ -756,6 +775,67 @@ function setupEventListeners() {
             saveData(false);
         }
     }, 60000);
+}
+
+// ==========================================
+// Upload Screen Week Configuration
+// ==========================================
+function setupUploadWeekControls() {
+    const input = document.getElementById('upload-week-input');
+    const prevBtn = document.getElementById('btn-quick-prev-week');
+    const nextBtn = document.getElementById('btn-quick-next-week');
+
+    if (input) {
+        input.addEventListener('blur', () => {
+            if (input.value.trim()) {
+                input.value = normalizeWeekName(input.value.trim());
+            }
+        });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                input.blur();
+            }
+        });
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => stepUploadWeek(-1));
+    }
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => stepUploadWeek(1));
+    }
+
+    updateUploadWeekUI();
+}
+
+function stepUploadWeek(delta) {
+    const input = document.getElementById('upload-week-input');
+    if (!input) return;
+    const currentVal = input.value.trim() || getCurrentWeekLabel();
+    const match = currentVal.match(/\d+/);
+    let num = match ? parseInt(match[0], 10) : 1;
+    num = Math.max(1, num + delta);
+    input.value = `Semana ${num}`;
+}
+
+function updateUploadWeekUI() {
+    const input = document.getElementById('upload-week-input');
+    const datalist = document.getElementById('upload-week-list');
+    if (!input || !datalist) return;
+
+    // Fill datalist with all known saved weeks
+    const existing = Object.keys(AppState.weeks);
+    datalist.innerHTML = '';
+    existing.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w;
+        datalist.appendChild(opt);
+    });
+
+    // Suggest default week if empty
+    if (!input.value.trim()) {
+        input.value = AppState.currentWeek || getCurrentWeekLabel();
+    }
 }
 
 function handleFileSelect(e) {
@@ -769,12 +849,17 @@ async function processFile(file) {
     errorDiv.style.display = 'none';
 
     try {
-        const items = await parseFile(file);
+        const weekInput = document.getElementById('upload-week-input');
+        const chosenWeek = (weekInput && weekInput.value.trim())
+            ? normalizeWeekName(weekInput.value.trim())
+            : (AppState.currentWeek || getCurrentWeekLabel());
+
+        const items = await parseFile(file, chosenWeek);
 
         // Group items by their week
         const importedWeeks = {};
         items.forEach(item => {
-            const w = item.semana || AppState.currentWeek || getCurrentWeekLabel();
+            const w = item.semana || chosenWeek;
             if (!importedWeeks[w]) importedWeeks[w] = [];
             importedWeeks[w].push(item);
         });
@@ -786,8 +871,8 @@ async function processFile(file) {
             AppState.weeks[w] = importedWeeks[w];
         });
 
-        // Set active week to the first week in the file
-        AppState.currentWeek = weekKeys[0];
+        // Set active week: prefer chosenWeek if in file, otherwise first week in file
+        AppState.currentWeek = importedWeeks[chosenWeek] ? chosenWeek : weekKeys[0];
         AppState.data = AppState.weeks[AppState.currentWeek] || [];
 
         // Save state
@@ -1043,6 +1128,12 @@ function exportData() {
 function showUploadScreen() {
     document.getElementById('upload-screen').style.display = 'flex';
     document.getElementById('dashboard-screen').style.display = 'none';
+    updateUploadWeekUI();
+
+    const btnReturn = document.getElementById('btn-return-dashboard');
+    if (btnReturn) {
+        btnReturn.style.display = (AppState.data && AppState.data.length > 0) ? 'inline-flex' : 'none';
+    }
 }
 
 function showDashboard() {

@@ -20,6 +20,31 @@
         <h1>Programação de Produção</h1>
         <p class="upload-subtitle">Importe sua planilha para começar o acompanhamento</p>
         
+        <!-- Configuração da Semana a Importar -->
+        <div class="upload-week-card">
+            <div class="upload-week-header">
+                <label for="upload-week-input" class="upload-week-label">
+                    <i class="fas fa-calendar-week"></i> Semana de Destino da Planilha
+                </label>
+                <span class="upload-week-badge" id="upload-week-badge">Semana Ativa</span>
+            </div>
+            <div class="upload-week-controls">
+                <div class="upload-week-input-wrapper">
+                    <input type="text" id="upload-week-input" class="upload-week-input" placeholder="Ex: Semana 41" list="upload-week-list" autocomplete="off">
+                    <datalist id="upload-week-list"></datalist>
+                </div>
+                <button type="button" class="btn-quick-week" id="btn-quick-prev-week" title="Semana anterior">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button type="button" class="btn-quick-week" id="btn-quick-next-week" title="Próxima semana">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <p class="upload-week-note">
+                <i class="fas fa-info-circle"></i> Os dados do arquivo serão salvos nesta semana. Caso a planilha contenha a coluna <strong>"Semana do Plano"</strong> preenchida, cada linha respeitará a semana indicada no arquivo.
+            </p>
+        </div>
+
         <div class="upload-dropzone" id="dropzone">
             <i class="fas fa-cloud-upload-alt"></i>
             <p>Arraste e solte seu arquivo aqui</p>
@@ -47,9 +72,14 @@
             <span id="upload-error-text"></span>
         </div>
 
-        <button id="btn-load-saved" class="btn-load-saved" style="display:none;">
-            <i class="fas fa-database"></i> Carregar dados salvos anteriormente
-        </button>
+        <div class="upload-actions-footer">
+            <button id="btn-load-saved" class="btn-load-saved" style="display:none;">
+                <i class="fas fa-database"></i> Carregar dados salvos anteriormente
+            </button>
+            <button id="btn-return-dashboard" class="btn-return-dashboard" style="display:none;">
+                <i class="fas fa-arrow-left"></i> Voltar ao Painel Aberto
+            </button>
+        </div>
     </div>
 </div>
 
