@@ -1,16 +1,16 @@
 /**
  * Painel de Programação de Produção
- * Application logic: file parsing, table rendering, data persistence
+ * Lógica da aplicação: leitura de arquivos, renderização da tabela e persistência de dados
  */
 
 // ==========================================
-// State Management
+// Gerenciamento de Estado
 // ==========================================
 const AppState = {
-    weeks: {},          // Map of week name -> Array of items: { "Semana 35": [...] }
-    currentWeek: '',    // Currently active week name
-    data: [],           // Array of production items for active week
-    filteredIds: null,  // Set of visible item IDs after filter
+    weeks: {},          // Mapeamento de nome da semana -> Lista de itens: { "Semana 35": [...] }
+    currentWeek: '',    // Nome da semana atualmente ativa
+    data: [],           // Lista de itens de produção da semana ativa
+    filteredIds: null,  // Conjunto de IDs dos itens visíveis após filtragem
 };
 
 const STORAGE_WEEKS_KEY = 'producao_dashboard_weeks_data';
@@ -18,7 +18,7 @@ const STORAGE_LEGACY_KEY = 'producao_dashboard_data';
 const STORAGE_LEGACY_META_KEY = 'producao_dashboard_meta';
 
 // ==========================================
-// Product Descriptions Dictionary (IDITEM → DESC_ITEM)
+// Dicionário de Descrições dos Produtos (IDITEM → DESC_ITEM)
 // ==========================================
 const PRODUCT_DESCRIPTIONS = {
     "184": "PERFIL FORRO CANTONEIRA 14 X 30 X 0,5 X 3000MM Z275",
@@ -171,12 +171,9 @@ const PRODUCT_DESCRIPTIONS = {
 };
 
 /**
- * Look up a product description by its code.
- * Falls back to empty string if not found.
- */
-/**
- * Look up a product description by its code.
- * Standardizes string keys and numeric lookups.
+ * Busca a descrição do produto pelo seu código.
+ * Padroniza chaves de texto e pesquisas numéricas.
+ * Retorna texto vazio caso o produto não seja encontrado.
  */
 function getProductDescription(codigo) {
     if (!codigo) return '';
@@ -184,7 +181,7 @@ function getProductDescription(codigo) {
     if (PRODUCT_DESCRIPTIONS[keyStr]) {
         return PRODUCT_DESCRIPTIONS[keyStr];
     }
-    // Try removing leading zeros if numeric (e.g. "0136" -> "136")
+    // Tenta remover zeros à esquerda se for numérico (ex: "0136" -> "136")
     const keyNum = parseInt(keyStr, 10);
     if (!isNaN(keyNum) && PRODUCT_DESCRIPTIONS[String(keyNum)]) {
         return PRODUCT_DESCRIPTIONS[String(keyNum)];
@@ -193,7 +190,7 @@ function getProductDescription(codigo) {
 }
 
 // ==========================================
-// Week helpers
+// Funções Auxiliares de Semanas
 // ==========================================
 function getCurrentWeekLabel() {
     const now = new Date();
@@ -209,16 +206,16 @@ function normalizeWeekName(val, fallback) {
     let str = String(val).trim();
     if (!str) return fallback || getCurrentWeekLabel();
 
-    // Check if integer like 35 or "35"
+    // Verifica se é um número inteiro como 35 ou "35"
     if (/^\d{1,2}$/.test(str)) {
         return `Semana ${parseInt(str, 10)}`;
     }
-    // Check if ISO format like "2026-W35"
+    // Verifica se está no formato ISO como "2026-W35"
     const isoMatch = str.match(/^(\d{4})-W(\d{1,2})$/i);
     if (isoMatch) {
         return `Semana ${parseInt(isoMatch[2], 10)}`;
     }
-    // Check if "Semana 35", "SEM 35", "SEMANA 35", etc.
+    // Verifica se é "Semana 35", "SEM 35", "SEMANA 35", etc.
     const semMatch = str.match(/^(?:semana|sem\.?)\s*(\d{1,2})(?:\s*[\/\-]\s*(\d{4}))?$/i);
     if (semMatch) {
         const num = parseInt(semMatch[1], 10);
@@ -228,7 +225,7 @@ function normalizeWeekName(val, fallback) {
 }
 
 // ==========================================
-// Column mapping helpers
+// Mapeamento de Colunas da Planilha
 // ==========================================
 const COLUMN_MAPS = {
     codigo: ['codigo_produto', 'codigo', 'código', 'código do produto', 'codigo do produto', 'item', 'iditem', 'cod', 'cod_produto', 'produto', 'code', 'sku'],
@@ -247,7 +244,7 @@ function findColumn(headers, mapKey) {
         const idx = normalized.indexOf(normCandidate);
         if (idx !== -1) return idx;
     }
-    // Partial match
+    // Correspondência parcial
     for (const candidate of candidates) {
         const normCandidate = candidate.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         const idx = normalized.findIndex(h => h.includes(normCandidate) || normCandidate.includes(h));
@@ -257,7 +254,7 @@ function findColumn(headers, mapKey) {
 }
 
 // ==========================================
-// File Parsing
+// Leitura e Processamento de Arquivos (CSV / Excel)
 // ==========================================
 function parseFile(file, fallbackWeek) {
     return new Promise((resolve, reject) => {
@@ -298,12 +295,12 @@ function parseFile(file, fallbackWeek) {
                 for (let i = 1; i < jsonData.length; i++) {
                     const row = jsonData[i];
                     const codigo = row[colCodigo] != null ? String(row[colCodigo]).trim() : '';
-                    if (!codigo) continue; // skip empty rows
+                    if (!codigo) continue; // ignora linhas vazias
 
-                    // Description priority:
-                    // 1. Look up in the official catalog (PRODUCT_DESCRIPTIONS)
-                    // 2. If catalog returns a value, use it!
-                    // 3. Otherwise check if CSV column has a description (and it's not just the code again)
+                    // Prioridade da descrição:
+                    // 1. Consulta no catálogo oficial (PRODUCT_DESCRIPTIONS)
+                    // 2. Se o catálogo retornar um valor, utiliza ele!
+                    // 3. Caso contrário, verifica se a coluna da planilha possui descrição (e se não é apenas o próprio código)
                     let catalogDesc = getProductDescription(codigo);
                     let csvDesc = colDesc !== -1 ? String(row[colDesc] || '').trim() : '';
 
@@ -312,9 +309,9 @@ function parseFile(file, fallbackWeek) {
                         descricao = csvDesc;
                     }
 
-                    // Week resolution per row:
-                    // If row has explicit non-empty week in CSV, respect it.
-                    // Otherwise use defaultTargetWeek chosen by user on upload screen.
+                    // Resolução da semana por linha:
+                    // Se a linha possuir uma semana explícita na planilha, respeita ela.
+                    // Caso contrário, utiliza a semana padrão definida pelo usuário na tela inicial.
                     let rawSemana = colSemana !== -1 ? String(row[colSemana] || '').trim() : '';
                     let semanaItem = rawSemana ? normalizeWeekName(rawSemana, defaultTargetWeek) : defaultTargetWeek;
 
@@ -365,7 +362,7 @@ function generateId() {
 }
 
 // ==========================================
-// Data Persistence (localStorage)
+// Persistência de Dados (localStorage)
 // ==========================================
 function saveData(showFeedback = true) {
     try {
@@ -398,7 +395,7 @@ function loadData() {
                 return parsed;
             }
         }
-        // Legacy migration fallback
+        // Migração de compatibilidade com versão anterior
         const legacyRaw = localStorage.getItem(STORAGE_LEGACY_KEY);
         if (legacyRaw) {
             const legacyData = JSON.parse(legacyRaw);
@@ -429,7 +426,7 @@ function clearSavedData() {
 }
 
 // ==========================================
-// Status Calculation
+// Cálculo de Status e Totais
 // ==========================================
 function calcTotal(weekObj) {
     return (weekObj.seg || 0) + (weekObj.ter || 0) + (weekObj.qua || 0) +
@@ -463,7 +460,7 @@ function getStatusClass(status) {
 }
 
 // ==========================================
-// Table Rendering
+// Renderização da Tabela
 // ==========================================
 const DAYS = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
 
@@ -476,7 +473,7 @@ function renderTable() {
         const totalPlano = calcTotal(item.plano);
         const totalReal = calcTotal(item.real);
 
-        // Plano row
+        // Linha de Planejamento (Plano)
         const rowPlano = document.createElement('tr');
         rowPlano.className = 'row-plano';
         rowPlano.dataset.itemId = item.id;
@@ -501,9 +498,9 @@ function renderTable() {
         DAYS.forEach(day => {
             planoHtml += `<td class="cell-day">
                 <input type="number" class="input-day input-day-plano" min="0"
-                       value="${item.plano[day] || ''}"
-                       data-item-id="${item.id}" data-type="plano" data-day="${day}"
-                       placeholder="0">
+                   value="${item.plano[day] || ''}"
+                   data-item-id="${item.id}" data-type="plano" data-day="${day}"
+                   placeholder="0">
             </td>`;
         });
 
@@ -515,7 +512,7 @@ function renderTable() {
         rowPlano.innerHTML = planoHtml;
         tbody.appendChild(rowPlano);
 
-        // Real row
+        // Linha de Produção Realizada (Real)
         const rowReal = document.createElement('tr');
         rowReal.className = 'row-real';
         rowReal.dataset.itemId = item.id;
@@ -527,9 +524,9 @@ function renderTable() {
         DAYS.forEach(day => {
             realHtml += `<td class="cell-day">
                 <input type="number" class="input-day input-day-real" min="0"
-                       value="${item.real[day] || ''}"
-                       data-item-id="${item.id}" data-type="real" data-day="${day}"
-                       placeholder="0">
+                   value="${item.real[day] || ''}"
+                   data-item-id="${item.id}" data-type="real" data-day="${day}"
+                   placeholder="0">
             </td>`;
         });
 
@@ -544,7 +541,7 @@ function renderTable() {
 }
 
 // ==========================================
-// Stats & Progress
+// Estatísticas e Barra de Progresso
 // ==========================================
 function updateStats() {
     let total = AppState.data.length;
@@ -572,14 +569,14 @@ function updateStats() {
     document.getElementById('footer-total-planejado').textContent = formatNumber(totalPlanejado);
     document.getElementById('footer-total-realizado').textContent = formatNumber(totalRealizado);
 
-    // Progress
+    // Cálculo do percentual de progresso
     const pct = total > 0 ? Math.round((concluido / total) * 100) : 0;
     document.getElementById('progress-bar').style.width = pct + '%';
     document.getElementById('progress-text').textContent = pct + '% concluído';
 }
 
 // ==========================================
-// Filtering
+// Filtragem e Busca
 // ==========================================
 function applyFilters() {
     const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
@@ -593,7 +590,7 @@ function applyFilters() {
         const status = calcStatus(item);
         let visible = true;
 
-        // Search
+        // Busca por texto
         if (searchTerm) {
             const desc = item.descricao || getProductDescription(item.codigo);
             const haystack = [item.codigo, desc, item.observacoes, item.estab, item.ordemProducao]
@@ -601,7 +598,7 @@ function applyFilters() {
             if (!haystack.includes(searchTerm)) visible = false;
         }
 
-        // Status filter
+        // Filtro por status
         if (statusFilter !== 'todos') {
             if (statusFilter === 'pendente' && status !== 'pendente') visible = false;
             else if (statusFilter === 'concluido' && status !== 'concluido') visible = false;
@@ -609,7 +606,7 @@ function applyFilters() {
             else if (statusFilter === 'nao_produzido' && status !== 'nao_produzido') visible = false;
         }
 
-        // Estab filter
+        // Filtro por estabelecimento
         if (estabFilter !== 'todos') {
             if (item.estab !== estabFilter) visible = false;
         }
@@ -640,14 +637,14 @@ function populateEstabFilter() {
 }
 
 // ==========================================
-// Event Handlers
+// Inicialização e Ouvintes de Eventos
 // ==========================================
 function setupEventListeners() {
-    // File input
+    // Seleção de arquivo
     const fileInput = document.getElementById('file-input');
     fileInput.addEventListener('change', handleFileSelect);
 
-    // Drag & Drop
+    // Arrastar e Soltar (Drag & Drop)
     const dropzone = document.getElementById('dropzone');
     dropzone.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -663,15 +660,15 @@ function setupEventListeners() {
         if (files.length > 0) processFile(files[0]);
     });
 
-    // Table event delegation
+    // Delegação de eventos da tabela (edição de valores)
     document.getElementById('table-body').addEventListener('input', handleTableInput);
 
-    // Search & Filters
+    // Busca e Filtros
     document.getElementById('search-input').addEventListener('input', debounce(applyFilters, 300));
     document.getElementById('filter-status').addEventListener('change', applyFilters);
     document.getElementById('filter-estab').addEventListener('change', applyFilters);
 
-    // Week selector dropdown
+    // Seletor de semanas (dropdown)
     const weekSelect = document.getElementById('week-select');
     if (weekSelect) {
         weekSelect.addEventListener('change', (e) => {
@@ -679,7 +676,7 @@ function setupEventListeners() {
         });
     }
 
-    // Week navigation buttons
+    // Botões de navegação de semana (anterior / próxima)
     const btnPrevWeek = document.getElementById('btn-prev-week');
     if (btnPrevWeek) {
         btnPrevWeek.addEventListener('click', () => navigateWeek(-1));
@@ -690,19 +687,19 @@ function setupEventListeners() {
         btnNextWeek.addEventListener('click', () => navigateWeek(1));
     }
 
-    // Add new week button
+    // Botão de adicionar nova semana
     const btnAddWeek = document.getElementById('btn-add-week');
     if (btnAddWeek) {
         btnAddWeek.addEventListener('click', createNewWeek);
     }
 
-    // Delete current week button
+    // Botão de excluir semana atual
     const btnDelWeek = document.getElementById('btn-del-week');
     if (btnDelWeek) {
         btnDelWeek.addEventListener('click', deleteCurrentWeek);
     }
 
-    // Calendar week picker button and input
+    // Seletor de semana via calendário
     const btnCalendarWeek = document.getElementById('btn-calendar-week');
     const weekInput = document.getElementById('week-input');
     if (btnCalendarWeek && weekInput) {
@@ -725,14 +722,14 @@ function setupEventListeners() {
         });
     }
 
-    // Header buttons
+    // Botões de ação do cabeçalho (Salvar, Exportar, Nova Importação)
     document.getElementById('btn-save').addEventListener('click', () => saveData(true));
     document.getElementById('btn-export').addEventListener('click', exportData);
     document.getElementById('btn-new-import').addEventListener('click', () => {
         showUploadScreen();
     });
 
-    // Load saved button in upload screen
+    // Botão de carregar dados salvos na tela inicial
     const btnSaved = document.getElementById('btn-load-saved');
     btnSaved.addEventListener('click', () => {
         const saved = loadData();
@@ -748,7 +745,7 @@ function setupEventListeners() {
         }
     });
 
-    // Initial check for saved data
+    // Verificação inicial de dados salvos anteriormente
     if (hasSavedData()) {
         btnSaved.style.display = 'inline-block';
         const saved = loadData();
@@ -758,7 +755,7 @@ function setupEventListeners() {
         }
     }
 
-    // Setup upload week controls & return button
+    // Configura controles de semana na tela de upload e botão voltar
     setupUploadWeekControls();
     const btnReturnDash = document.getElementById('btn-return-dashboard');
     if (btnReturnDash) {
@@ -769,7 +766,7 @@ function setupEventListeners() {
         });
     }
 
-    // Auto-save every 60s
+    // Salvamento automático em segundo plano a cada 60s
     setInterval(() => {
         if (AppState.currentWeek && AppState.data.length > 0) {
             saveData(false);
@@ -778,7 +775,7 @@ function setupEventListeners() {
 }
 
 // ==========================================
-// Upload Screen Week Configuration
+// Configuração da Semana na Tela de Upload
 // ==========================================
 function setupUploadWeekControls() {
     const input = document.getElementById('upload-week-input');
@@ -823,7 +820,7 @@ function updateUploadWeekUI() {
     const datalist = document.getElementById('upload-week-list');
     if (!input || !datalist) return;
 
-    // Fill datalist with all known saved weeks
+    // Preenche o datalist com todas as semanas salvas conhecidas
     const existing = Object.keys(AppState.weeks);
     datalist.innerHTML = '';
     existing.forEach(w => {
@@ -832,7 +829,7 @@ function updateUploadWeekUI() {
         datalist.appendChild(opt);
     });
 
-    // Suggest default week if empty
+    // Sugere semana padrão se o campo estiver vazio
     if (!input.value.trim()) {
         input.value = AppState.currentWeek || getCurrentWeekLabel();
     }
@@ -856,7 +853,7 @@ async function processFile(file) {
 
         const items = await parseFile(file, chosenWeek);
 
-        // Group items by their week
+        // Agrupa os itens por semana
         const importedWeeks = {};
         items.forEach(item => {
             const w = item.semana || chosenWeek;
@@ -866,19 +863,19 @@ async function processFile(file) {
 
         const weekKeys = Object.keys(importedWeeks);
 
-        // Merge into AppState.weeks
+        // Mescla no objeto AppState.weeks
         weekKeys.forEach(w => {
             AppState.weeks[w] = importedWeeks[w];
         });
 
-        // Set active week: prefer chosenWeek if in file, otherwise first week in file
+        // Define a semana ativa: prioriza a semana escolhida se presente, caso contrário a primeira semana
         AppState.currentWeek = importedWeeks[chosenWeek] ? chosenWeek : weekKeys[0];
         AppState.data = AppState.weeks[AppState.currentWeek] || [];
 
-        // Save state
+        // Salva o estado atual
         saveData(false);
 
-        // Transition to dashboard
+        // Transição para a tela principal do painel
         showDashboard();
 
         if (weekKeys.length > 1) {
@@ -896,7 +893,7 @@ async function processFile(file) {
 function handleTableInput(e) {
     const target = e.target;
 
-    // Ordem de Produção input
+    // Edição da Ordem de Produção (OP)
     if (target.classList.contains('input-op')) {
         const itemId = target.dataset.itemId;
         const item = AppState.data.find(i => i.id === itemId);
@@ -906,7 +903,7 @@ function handleTableInput(e) {
         return;
     }
 
-    // Day input (plano or real)
+    // Edição dos dias da semana (Plano ou Real)
     if (target.classList.contains('input-day')) {
         const itemId = target.dataset.itemId;
         const type = target.dataset.type;
@@ -928,10 +925,10 @@ function updateRowTotalsAndStatus(itemId) {
     const totalReal = calcTotal(item.real);
     const status = calcStatus(item);
 
-    // Find rows for this item
+    // Localiza as linhas correspondentes a este item na tabela
     const rows = document.querySelectorAll(`tr[data-item-id="${itemId}"]`);
     rows.forEach(row => {
-        // Update total cells
+        // Atualiza as células de total
         const totalCells = row.querySelectorAll('.cell-total');
         totalCells.forEach(cell => {
             if (row.classList.contains('row-plano')) {
@@ -941,7 +938,7 @@ function updateRowTotalsAndStatus(itemId) {
             }
         });
 
-        // Update status badge
+        // Atualiza o distintivo de status
         const statusCell = row.querySelector('.cell-status');
         if (statusCell) {
             statusCell.innerHTML = `<span class="status-badge ${getStatusClass(status)}">${getStatusLabel(status)}</span>`;
@@ -950,7 +947,7 @@ function updateRowTotalsAndStatus(itemId) {
 }
 
 // ==========================================
-// Week Navigation & Management
+// Navegação e Gerenciamento de Semanas
 // ==========================================
 function populateWeekDropdown() {
     const select = document.getElementById('week-select');
@@ -964,7 +961,7 @@ function populateWeekDropdown() {
         weekNames.push(defaultWeek);
     }
 
-    // Sort weeks by week number
+    // Ordena as semanas pelo número da semana
     weekNames.sort((a, b) => {
         const numA = parseInt(a.replace(/\D/g, ''), 10) || 0;
         const numB = parseInt(b.replace(/\D/g, ''), 10) || 0;
@@ -983,7 +980,7 @@ function populateWeekDropdown() {
         select.appendChild(opt);
     });
 
-    // Toggle delete button
+    // Exibe ou oculta o botão de excluir semana
     const btnDel = document.getElementById('btn-del-week');
     if (btnDel) {
         btnDel.style.display = weekNames.length > 1 ? 'inline-flex' : 'none';
@@ -993,7 +990,7 @@ function populateWeekDropdown() {
 function switchWeek(newWeek, saveCurrent = true) {
     if (!newWeek || (newWeek === AppState.currentWeek && AppState.data.length > 0)) return;
 
-    // Save previous week before switching
+    // Salva a semana anterior antes de alternar
     if (saveCurrent && AppState.currentWeek) {
         AppState.weeks[AppState.currentWeek] = AppState.data;
         saveData(false);
@@ -1082,12 +1079,12 @@ function deleteCurrentWeek() {
 }
 
 // ==========================================
-// Export
+// Exportação para Excel (.xlsx)
 // ==========================================
 function exportData() {
     const exportRows = [];
 
-    // Header
+    // Cabeçalho da planilha exportada
     exportRows.push([
         'Semana', 'Código Produto', 'Descrição', 'Estabelecimento', 'Qtd Programada', 'Observações',
         'Ordem de Produção',
@@ -1122,7 +1119,7 @@ function exportData() {
 }
 
 // ==========================================
-// Screen Navigation
+// Navegação entre Telas
 // ==========================================
 function showUploadScreen() {
     document.getElementById('upload-screen').style.display = 'flex';
@@ -1154,7 +1151,7 @@ function updateHeaderSubtitle() {
 }
 
 // ==========================================
-// Utility Functions
+// Funções Utilitárias
 // ==========================================
 function escapeHtml(str) {
     if (!str) return '';
@@ -1198,6 +1195,6 @@ function showSaveIndicator() {
 }
 
 // ==========================================
-// Init
+// Inicialização da Aplicação
 // ==========================================
 document.addEventListener('DOMContentLoaded', setupEventListeners);

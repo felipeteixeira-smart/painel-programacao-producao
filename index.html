@@ -11,7 +11,7 @@
 </head>
 <body>
 
-<!-- Upload Screen -->
+<!-- Tela de Upload / Importação -->
 <div id="upload-screen" class="upload-screen">
     <div class="upload-container">
         <div class="upload-logo">
@@ -83,10 +83,10 @@
     </div>
 </div>
 
-<!-- Dashboard Screen -->
+<!-- Tela Principal do Painel -->
 <div id="dashboard-screen" class="dashboard-screen" style="display:none;">
     
-    <!-- Top Header Bar -->
+    <!-- Barra Superior do Cabeçalho -->
     <header class="header">
         <div class="header-left">
             <img src="logo.jpg" alt="Espaço Smart" class="brand-logo-header">
@@ -131,7 +131,7 @@
         </div>
     </header>
 
-    <!-- Toolbar -->
+    <!-- Barra de Ferramentas e Filtros -->
     <div class="toolbar">
         <div class="toolbar-left">
             <div class="search-box">
@@ -183,7 +183,7 @@
         </div>
     </div>
 
-    <!-- Progress Bar -->
+    <!-- Barra de Progresso Geral -->
     <div class="progress-section">
         <div class="progress-bar-container">
             <div class="progress-bar" id="progress-bar" style="width:0%"></div>
@@ -191,7 +191,7 @@
         <span class="progress-text" id="progress-text">0% concluído</span>
     </div>
 
-    <!-- Main Table -->
+    <!-- Tabela Principal de Produção -->
     <div class="table-wrapper">
         <table id="production-table">
             <thead>
@@ -217,12 +217,12 @@
                 </tr>
             </thead>
             <tbody id="table-body">
-                <!-- Rows populated by JS -->
+                <!-- Linhas preenchidas dinamicamente pelo JavaScript -->
             </tbody>
         </table>
     </div>
 
-    <!-- Footer totals -->
+    <!-- Totais do Rodapé -->
     <div class="footer-bar">
         <div class="footer-info">
             <span><i class="fas fa-cubes"></i> Total Programado: <strong id="footer-total-programado">0</strong></span>
@@ -237,7 +237,7 @@
     </div>
 </div>
 
-<!-- Toast notifications -->
+<!-- Contêiner de Notificações Toast -->
 <div id="toast-container" class="toast-container"></div>
 
 <script src="app.js"></script>
